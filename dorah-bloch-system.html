@@ -1,0 +1,2423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dorah Bloch Academic Intelligence System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0a0a0f;
+  --paper: #f5f3ee;
+  --ivory: #fffdf7;
+  --gold: #c9a84c;
+  --gold-light: #e8c96a;
+  --crimson: #b91c3b;
+  --emerald: #0f7b52;
+  --sky: #1a6ebd;
+  --amber: #d97706;
+  --surface: #1a1a24;
+  --surface2: #24242f;
+  --surface3: #2e2e3d;
+  --muted: #8888a0;
+  --border: rgba(255,255,255,0.07);
+  --glow: rgba(201,168,76,0.15);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--ink);
+  color: #e8e6df;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── ANIMATED BACKGROUND ── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.bg-orb {
+  position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0;
+  animation: drift 20s ease-in-out infinite alternate;
+}
+.bg-orb-1 { width: 600px; height: 600px; background: rgba(201,168,76,0.06); top: -200px; right: -200px; }
+.bg-orb-2 { width: 400px; height: 400px; background: rgba(185,28,59,0.05); bottom: -100px; left: -100px; animation-delay: -10s; }
+@keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,60px) scale(1.1); } }
+
+/* ── LAYOUT ── */
+#app { position: relative; z-index: 1; min-height: 100vh; }
+
+.page { display: none; animation: fadeIn 0.4s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+
+/* ── SPLASH / LOGIN ── */
+#splash {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+.splash-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 32px;
+  animation: pulse-border 3s ease infinite;
+}
+@keyframes pulse-border {
+  0%,100% { border-color: rgba(201,168,76,0.3); }
+  50% { border-color: rgba(201,168,76,0.7); }
+}
+.splash-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(36px, 6vw, 80px);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--paper);
+  margin-bottom: 8px;
+}
+.splash-title .gold { color: var(--gold); }
+.splash-subtitle {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(16px, 2.5vw, 22px);
+  color: var(--muted);
+  margin-bottom: 48px;
+  font-style: italic;
+}
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 48px;
+}
+.portal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+.portal-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.portal-card:hover { transform: translateY(-4px); border-color: rgba(201,168,76,0.3); }
+.portal-card:hover::before { opacity: 1; }
+.portal-card .icon { font-size: 32px; margin-bottom: 16px; display: block; }
+.portal-card h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--paper); margin-bottom: 6px; }
+.portal-card p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.portal-card.student { --accent: #c9a84c; }
+.portal-card.teacher { --accent: #0f7b52; }
+.portal-card.admin { --accent: #b91c3b; }
+
+/* ── MODAL LOGIN ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%; max-width: 440px;
+  transform: scale(0.95);
+  transition: transform 0.3s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-header { margin-bottom: 32px; }
+.modal-header h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--paper); }
+.modal-header p { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.form-group input, .form-group select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--paper);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+.form-group input::placeholder { color: var(--muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary { background: var(--gold); color: var(--ink); }
+.btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--paper); border-color: var(--muted); }
+.btn-danger { background: var(--crimson); color: white; }
+.btn-success { background: var(--emerald); color: white; }
+.btn-full { width: 100%; }
+.btn-sm { padding: 8px 16px; font-size: 11px; }
+
+.error-msg { color: var(--crimson); font-size: 12px; margin-top: 8px; display: none; }
+
+/* ── DASHBOARD SHELL ── */
+.shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s;
+}
+.sidebar-logo {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo .logo-mark {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.sidebar-logo .logo-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.sidebar-user {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--crimson));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px;
+  color: white; flex-shrink: 0;
+}
+.user-info .name { font-size: 12px; font-weight: 500; color: var(--paper); }
+.user-info .role { font-size: 10px; color: var(--muted); }
+
+.sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+.nav-section { margin-bottom: 24px; }
+.nav-section-title { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding: 0 8px; margin-bottom: 8px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  transition: all 0.2s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--surface2); color: var(--paper); }
+.nav-item.active { background: rgba(201,168,76,0.12); color: var(--gold); }
+.nav-item .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--crimson);
+  color: white;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 100px;
+  font-weight: 700;
+}
+
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── MAIN CONTENT ── */
+.main { margin-left: 240px; flex: 1; }
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,10,15,0.8); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--paper); }
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+.live-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--emerald); letter-spacing: 1px;
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--emerald);
+  animation: live-pulse 2s ease infinite;
+}
+@keyframes live-pulse {
+  0%,100% { opacity:1; transform: scale(1); }
+  50% { opacity:0.4; transform: scale(0.8); }
+}
+
+.content { padding: 32px; }
+.content-section { display: none; }
+.content-section.active { display: block; animation: fadeIn 0.3s ease; }
+
+/* ── STATS GRID ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: rgba(201,168,76,0.2); }
+.stat-card .stat-icon {
+  font-size: 24px; margin-bottom: 16px;
+}
+.stat-card .stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px; font-weight: 800;
+  color: var(--paper);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-card .stat-label { font-size: 11px; color: var(--muted); }
+.stat-card .stat-change {
+  position: absolute; top: 20px; right: 20px;
+  font-size: 11px; padding: 4px 8px; border-radius: 6px;
+}
+.stat-change.up { background: rgba(15,123,82,0.15); color: #34d399; }
+.stat-change.down { background: rgba(185,28,59,0.15); color: #f87171; }
+
+/* ── CHARTS ── */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+@media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+.chart-card h3 { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--paper); margin-bottom: 20px; }
+.chart-wrapper { position: relative; }
+
+/* ── TABLES ── */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.table-header h3 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--paper); }
+
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.search-box input {
+  background: none; border: none; outline: none;
+  color: var(--paper); font-family: 'DM Mono', monospace; font-size: 12px;
+  width: 180px;
+}
+.search-box input::placeholder { color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; }
+thead tr { border-bottom: 1px solid var(--border); }
+thead th {
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); font-family: 'DM Mono', monospace; font-weight: 400;
+}
+tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.15s;
+}
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody td { padding: 14px 20px; font-size: 12px; }
+tbody td:last-child { text-align: right; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 100px;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.5px;
+}
+.badge-strong { background: rgba(15,123,82,0.15); color: #34d399; }
+.badge-stable { background: rgba(26,110,189,0.15); color: #60a5fa; }
+.badge-monitor { background: rgba(217,119,6,0.15); color: #fbbf24; }
+.badge-intervention { background: rgba(185,28,59,0.15); color: #f87171; }
+.badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+.badge-gray { background: rgba(136,136,160,0.15); color: var(--muted); }
+
+/* ── SIGNAL METER ── */
+.signal-bar {
+  display: flex; align-items: center; gap: 8px;
+}
+.signal-track {
+  flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden;
+}
+.signal-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease;
+}
+.signal-fill.strong { background: linear-gradient(90deg, var(--emerald), #34d399); }
+.signal-fill.stable { background: linear-gradient(90deg, var(--sky), #60a5fa); }
+.signal-fill.monitor { background: linear-gradient(90deg, var(--amber), #fbbf24); }
+.signal-fill.intervention { background: linear-gradient(90deg, var(--crimson), #f87171); }
+.signal-pct { font-size: 11px; color: var(--muted); width: 32px; text-align: right; }
+
+/* ── ALERT TICKER ── */
+.alert-ticker {
+  background: rgba(185,28,59,0.08);
+  border: 1px solid rgba(185,28,59,0.2);
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+  overflow: hidden;
+}
+.ticker-label {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--crimson); flex-shrink: 0;
+  font-weight: 600;
+}
+.ticker-scroll { overflow: hidden; flex: 1; }
+.ticker-inner {
+  display: flex; gap: 40px;
+  animation: ticker 20s linear infinite;
+  white-space: nowrap;
+}
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-item { font-size: 11px; color: #f87171; }
+
+/* ── RESULT CARD ── */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.result-subject {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.result-subject .subj-name { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.result-subject .subj-score {
+  font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800;
+  line-height: 1; color: var(--paper);
+}
+.result-subject .subj-grade {
+  font-size: 11px; color: var(--gold); margin-top: 4px;
+}
+.result-subject .subj-bar {
+  margin-top: 12px; height: 3px;
+  background: var(--surface3); border-radius: 2px; overflow: hidden;
+}
+.result-subject .subj-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  transition: width 1.2s ease;
+}
+
+/* ── PROFILE HERO ── */
+.profile-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  display: flex; align-items: center; gap: 24px;
+  flex-wrap: wrap;
+}
+.profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--crimson));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px;
+  color: white; flex-shrink: 0;
+}
+.profile-details h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--paper); }
+.profile-details p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.profile-meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+.meta-item .meta-val { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--paper); }
+.meta-item .meta-key { font-size: 10px; color: var(--muted); }
+
+/* ── AI INSIGHT CARD ── */
+.ai-card {
+  background: linear-gradient(135deg, rgba(201,168,76,0.06), rgba(185,28,59,0.04));
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.ai-card::before {
+  content: '⚡ AI INSIGHT';
+  position: absolute; top: 12px; right: 16px;
+  font-size: 9px; letter-spacing: 2px; color: var(--gold); opacity: 0.6;
+}
+.ai-card h4 { font-family: 'Syne', sans-serif; font-size: 13px; color: var(--gold); margin-bottom: 10px; }
+.ai-card p { font-size: 12px; color: #c8c6bc; line-height: 1.7; }
+.ai-thinking {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--muted);
+}
+.thinking-dots span {
+  display: inline-block; width: 4px; height: 4px;
+  background: var(--gold); border-radius: 50%;
+  margin: 0 1px;
+  animation: bounce 1.4s ease infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+/* ── NOTIFICATION ── */
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 10px;
+  padding: 14px 18px;
+  min-width: 280px;
+  animation: slideIn 0.3s ease;
+  font-size: 12px;
+}
+.toast.success { border-left-color: var(--emerald); }
+.toast.error { border-left-color: var(--crimson); }
+.toast .toast-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--paper); margin-bottom: 4px; }
+@keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes slideOut { from { transform:none; opacity:1; } to { transform: translateX(100%); opacity:0; } }
+
+/* ── FORM GRIDS ── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+
+/* ── MINI PROGRESS RING ── */
+.ring-container { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.ring-label { font-size: 10px; color: var(--muted); text-align: center; }
+
+/* ── ATTENDANCE CALENDAR ── */
+.att-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.att-day {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 500;
+  transition: transform 0.15s;
+  cursor: default;
+}
+.att-day:hover { transform: scale(1.2); }
+.att-present { background: rgba(15,123,82,0.3); color: #34d399; }
+.att-absent { background: rgba(185,28,59,0.3); color: #f87171; }
+.att-late { background: rgba(217,119,6,0.3); color: #fbbf24; }
+.att-holiday { background: rgba(136,136,160,0.1); color: var(--muted); }
+
+/* ── RANKING TABLE ── */
+.rank-num {
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800;
+  color: var(--muted);
+}
+.rank-num.gold { color: #fbbf24; }
+.rank-num.silver { color: #9ca3af; }
+.rank-num.bronze { color: #d97706; }
+
+/* ── CHART CANVAS ── */
+canvas { max-width: 100%; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: none; }
+  .main { margin-left: 0; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .content { padding: 20px 16px; }
+}
+
+.menu-toggle {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  color: var(--paper); font-size: 20px; padding: 4px;
+}
+@media (max-width: 768px) { .menu-toggle { display: block; } }
+
+/* ── SECTION HEADERS ── */
+.section-header { margin-bottom: 24px; }
+.section-header h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--paper); }
+.section-header p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── TABS ── */
+.tab-bar {
+  display: flex; gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+  width: fit-content;
+}
+.tab {
+  padding: 8px 20px;
+  border-radius: 7px;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s;
+  border: none; background: none;
+}
+.tab.active { background: var(--surface2); color: var(--paper); }
+
+/* ── RISK ALERT CARDS ── */
+.risk-cards { display: flex; flex-direction: column; gap: 10px; }
+.risk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--crimson);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  justify-content: space-between;
+}
+.risk-card.warning { border-left-color: var(--amber); }
+.risk-card .risk-info h4 { font-size: 13px; color: var(--paper); }
+.risk-card .risk-info p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── LOADING SPINNER ── */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(201,168,76,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+.empty-state {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state p { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div id="app">
+
+<!-- ══════════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══════════════════════════════════════════
+     SPLASH / PORTAL SELECT
+══════════════════════════════════════════ -->
+<div id="splash" class="page active">
+  <div class="splash-badge">🏛️ Academic Intelligence System · Est. 2024</div>
+  <h1 class="splash-title">DORAH <span class="gold">BLOCH</span></h1>
+  <p class="splash-subtitle">Enterprise Academic Intelligence Platform</p>
+  <div class="portal-grid">
+    <div class="portal-card student" onclick="openLogin('student')">
+      <span class="icon">🎓</span>
+      <h3>Student Portal</h3>
+      <p>Access results, report cards, attendance & academic signals using your LIN.</p>
+    </div>
+    <div class="portal-card teacher" onclick="openLogin('teacher')">
+      <span class="icon">📚</span>
+      <h3>Teacher Portal</h3>
+      <p>Manage marks, attendance, assignments & monitor class performance in real time.</p>
+    </div>
+    <div class="portal-card admin" onclick="openLogin('admin')">
+      <span class="icon">⚙️</span>
+      <h3>Admin Dashboard</h3>
+      <p>Full system control — students, staff, analytics, reports & deployment tools.</p>
+    </div>
+  </div>
+  <p style="font-size:11px;color:var(--muted)">🔒 Secured with JWT · SSL Encrypted · Real-time monitoring active</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LOGIN MODALS
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="loginTitle">Student Access</h2>
+      <p id="loginSub">Enter your credentials to continue</p>
+    </div>
+    <div id="studentFields">
+      <div class="form-group">
+        <label>LIN Number</label>
+        <input type="text" id="linInput" placeholder="e.g. LIN-2024-0042">
+      </div>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="nameInput" placeholder="e.g. Alice Nakato">
+      </div>
+    </div>
+    <div id="staffFields" style="display:none">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="usernameInput" placeholder="teacher@dorahbloch.edu">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="passwordInput" placeholder="••••••••">
+      </div>
+    </div>
+    <p class="error-msg" id="loginError">❌ Invalid credentials. Please try again.</p>
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button class="btn btn-primary btn-full" onclick="doLogin()">
+        <span id="loginBtnText">Access Portal</span>
+      </button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+    <p style="font-size:10px;color:var(--muted);margin-top:16px;text-align:center">
+      Demo: Students → any LIN + name &nbsp;|&nbsp; Staff → any credentials
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STUDENT PORTAL
+══════════════════════════════════════════ -->
+<div id="studentPortal" class="page">
+  <div class="shell">
+    <nav class="sidebar" id="studentSidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">DORAH BLOCH</div>
+        <div class="logo-sub">Student Portal</div>
+      </div>
+      <div class="sidebar-user" id="studentSidebarUser"></div>
+      <div class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Academic</div>
+          <div class="nav-item active" onclick="showStudentSection('overview')">
+            <span class="nav-icon">🏠</span> Overview
+          </div>
+          <div class="nav-item" onclick="showStudentSection('results')">
+            <span class="nav-icon">📊</span> Results
+          </div>
+          <div class="nav-item" onclick="showStudentSection('reportcard')">
+            <span class="nav-icon">📄</span> Report Card
+          </div>
+          <div class="nav-item" onclick="showStudentSection('attendance')">
+            <span class="nav-icon">📅</span> Attendance
+          </div>
+          <div class="nav-item" onclick="showStudentSection('assignments')">
+            <span class="nav-icon">📝</span> Assignments
+          </div>
+          <div class="nav-item" onclick="showStudentSection('insights')">
+            <span class="nav-icon">🧠</span> AI Insights
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-ghost btn-full btn-sm" onclick="logout()">← Logout</button>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" onclick="toggleSidebar('studentSidebar')">☰</button>
+          <span class="topbar-title" id="studentTopTitle">Overview</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="live-indicator"><div class="live-dot"></div> LIVE</div>
+        </div>
+      </div>
+      <div class="content">
+        <!-- OVERVIEW -->
+        <div class="content-section active" id="s-overview">
+          <div id="studentProfileHero"></div>
+          <div id="studentAlertArea"></div>
+          <div class="stats-grid" id="studentStats"></div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h3>📈 Performance Trend</h3>
+              <canvas id="studentTrendChart" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>🎯 Subject Breakdown</h3>
+              <canvas id="studentRadarChart" height="200"></canvas>
+            </div>
+          </div>
+          <div id="aiOverviewCard"></div>
+        </div>
+        <!-- RESULTS -->
+        <div class="content-section" id="s-results">
+          <div class="section-header">
+            <h2>Academic Results</h2>
+            <p>Your marks across all subjects and exams</p>
+          </div>
+          <div class="tab-bar">
+            <button class="tab active" onclick="switchExam(this,'T1')">Term 1</button>
+            <button class="tab" onclick="switchExam(this,'T2')">Term 2</button>
+            <button class="tab" onclick="switchExam(this,'T3')">Term 3</button>
+            <button class="tab" onclick="switchExam(this,'Final')">Final</button>
+          </div>
+          <div id="resultsGrid" class="result-grid"></div>
+        </div>
+        <!-- REPORT CARD -->
+        <div class="content-section" id="s-reportcard">
+          <div class="section-header">
+            <h2>Official Report Card</h2>
+            <p>Academic year comprehensive report</p>
+          </div>
+          <div id="reportCardContent"></div>
+        </div>
+        <!-- ATTENDANCE -->
+        <div class="content-section" id="s-attendance">
+          <div class="section-header"><h2>Attendance Record</h2><p>Your daily attendance history</p></div>
+          <div class="stats-grid" id="attStats"></div>
+          <div class="chart-card" style="margin-bottom:24px">
+            <h3>📅 This Month — Attendance Calendar</h3>
+            <div class="att-grid" id="attCalendar"></div>
+            <div style="display:flex;gap:16px;margin-top:12px;font-size:10px;color:var(--muted)">
+              <span>🟢 Present</span><span>🔴 Absent</span><span>🟡 Late</span>
+            </div>
+          </div>
+        </div>
+        <!-- ASSIGNMENTS -->
+        <div class="content-section" id="s-assignments">
+          <div class="section-header"><h2>Assignments</h2><p>Submitted and pending work</p></div>
+          <div class="table-card">
+            <div class="table-header"><h3>Assignment Tracker</h3></div>
+            <table>
+              <thead><tr>
+                <th>Subject</th><th>Title</th><th>Due Date</th><th>Status</th><th>Score</th>
+              </tr></thead>
+              <tbody id="assignmentTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- AI INSIGHTS -->
+        <div class="content-section" id="s-insights">
+          <div class="section-header"><h2>AI Academic Insights</h2><p>Powered by Academic Intelligence Engine</p></div>
+          <div id="aiInsightCards"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TEACHER PORTAL
+══════════════════════════════════════════ -->
+<div id="teacherPortal" class="page">
+  <div class="shell">
+    <nav class="sidebar" id="teacherSidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">DORAH BLOCH</div>
+        <div class="logo-sub">Teacher Portal</div>
+      </div>
+      <div class="sidebar-user" id="teacherSidebarUser"></div>
+      <div class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Classroom</div>
+          <div class="nav-item active" onclick="showTeacherSection('tdash')">
+            <span class="nav-icon">🏠</span> Dashboard
+          </div>
+          <div class="nav-item" onclick="showTeacherSection('tmarks')">
+            <span class="nav-icon">✏️</span> Enter Marks
+          </div>
+          <div class="nav-item" onclick="showTeacherSection('tattendance')">
+            <span class="nav-icon">📅</span> Attendance
+          </div>
+          <div class="nav-item" onclick="showTeacherSection('tassignments')">
+            <span class="nav-icon">📝</span> Assignments
+          </div>
+          <div class="nav-item" onclick="showTeacherSection('tclass')">
+            <span class="nav-icon">📊</span> Class Performance
+          </div>
+          <div class="nav-item" onclick="showTeacherSection('talerts')">
+            <span class="nav-icon">🚨</span> Alerts <span class="nav-badge">3</span>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-ghost btn-full btn-sm" onclick="logout()">← Logout</button>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" onclick="toggleSidebar('teacherSidebar')">☰</button>
+          <span class="topbar-title" id="teacherTopTitle">Dashboard</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="live-indicator"><div class="live-dot"></div> LIVE</div>
+        </div>
+      </div>
+      <div class="content">
+        <!-- TEACHER DASH -->
+        <div class="content-section active" id="t-tdash">
+          <div class="section-header"><h2>Welcome back, Teacher</h2><p>Your class overview for today</p></div>
+          <div class="stats-grid" id="teacherStats"></div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h3>📊 Class Average by Subject</h3>
+              <canvas id="teacherSubjectChart" height="220"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>🚦 Performance Distribution</h3>
+              <canvas id="teacherDistChart" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- ENTER MARKS -->
+        <div class="content-section" id="t-tmarks">
+          <div class="section-header"><h2>Enter Marks</h2><p>Record exam scores for your class</p></div>
+          <div class="chart-card">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Class</label>
+                <select id="markClass">
+                  <option>S1A</option><option>S1B</option><option>S2A</option><option>S3A</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Subject</label>
+                <select id="markSubject">
+                  <option>Mathematics</option><option>English</option><option>Science</option>
+                  <option>History</option><option>Geography</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Exam Type</label>
+                <select id="markExam">
+                  <option>Term 1</option><option>Term 2</option><option>Term 3</option><option>Final</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-card" style="margin-top:16px">
+              <div class="table-header"><h3>Student Mark Entry</h3>
+                <button class="btn btn-primary btn-sm" onclick="saveMarks()">💾 Save All Marks</button>
+              </div>
+              <table>
+                <thead><tr><th>LIN</th><th>Student Name</th><th>Marks /100</th><th>Grade</th></tr></thead>
+                <tbody id="markEntryTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- ATTENDANCE -->
+        <div class="content-section" id="t-tattendance">
+          <div class="section-header"><h2>Take Attendance</h2><p>Record today's attendance</p></div>
+          <div class="chart-card">
+            <div class="form-row" style="margin-bottom:20px">
+              <div class="form-group">
+                <label>Class</label>
+                <select id="attClass">
+                  <option>S1A</option><option>S1B</option><option>S2A</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="attDate">
+              </div>
+            </div>
+            <div class="table-card">
+              <div class="table-header"><h3>Attendance Sheet</h3>
+                <button class="btn btn-primary btn-sm" onclick="saveAttendance()">✅ Submit</button>
+              </div>
+              <table>
+                <thead><tr><th>LIN</th><th>Name</th><th>Status</th></tr></thead>
+                <tbody id="attendanceSheet"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- ASSIGNMENTS -->
+        <div class="content-section" id="t-tassignments">
+          <div class="section-header"><h2>Create Assignment</h2></div>
+          <div class="chart-card">
+            <div class="form-row">
+              <div class="form-group"><label>Title</label><input type="text" id="asgTitle" placeholder="Assignment title"></div>
+              <div class="form-group"><label>Subject</label><select id="asgSubject"><option>Mathematics</option><option>English</option><option>Science</option></select></div>
+              <div class="form-group"><label>Class</label><select id="asgClass"><option>S1A</option><option>S2A</option></select></div>
+              <div class="form-group"><label>Due Date</label><input type="date" id="asgDue"></div>
+            </div>
+            <button class="btn btn-primary" onclick="createAssignment()">📌 Publish Assignment</button>
+          </div>
+        </div>
+        <!-- CLASS PERFORMANCE -->
+        <div class="content-section" id="t-tclass">
+          <div class="section-header"><h2>Class Performance</h2></div>
+          <div class="table-card">
+            <div class="table-header">
+              <h3>Student Rankings</h3>
+              <div class="search-box"><span>🔍</span><input type="text" placeholder="Search student..." oninput="filterStudents(this.value)"></div>
+            </div>
+            <table>
+              <thead><tr><th>Rank</th><th>LIN</th><th>Name</th><th>Average</th><th>Signal</th><th>Status</th></tr></thead>
+              <tbody id="classTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- ALERTS -->
+        <div class="content-section" id="t-talerts">
+          <div class="section-header"><h2>Academic Alerts</h2><p>Students requiring attention</p></div>
+          <div class="risk-cards" id="teacherAlerts"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADMIN DASHBOARD
+══════════════════════════════════════════ -->
+<div id="adminPortal" class="page">
+  <div class="shell">
+    <nav class="sidebar" id="adminSidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">DORAH BLOCH</div>
+        <div class="logo-sub">Admin Control</div>
+      </div>
+      <div class="sidebar-user" id="adminSidebarUser"></div>
+      <div class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Control</div>
+          <div class="nav-item active" onclick="showAdminSection('adash')">
+            <span class="nav-icon">🏛️</span> Dashboard
+          </div>
+          <div class="nav-item" onclick="showAdminSection('astudents')">
+            <span class="nav-icon">🎓</span> Students
+          </div>
+          <div class="nav-item" onclick="showAdminSection('ateachers')">
+            <span class="nav-icon">👨‍🏫</span> Teachers
+          </div>
+          <div class="nav-item" onclick="showAdminSection('aresults')">
+            <span class="nav-icon">📊</span> Results
+          </div>
+          <div class="nav-item" onclick="showAdminSection('aanalytics')">
+            <span class="nav-icon">🧠</span> Analytics
+          </div>
+          <div class="nav-item" onclick="showAdminSection('areports')">
+            <span class="nav-icon">📄</span> Reports
+          </div>
+          <div class="nav-item" onclick="showAdminSection('amonitoring')">
+            <span class="nav-icon">⚡</span> Monitoring
+          </div>
+          <div class="nav-item" onclick="showAdminSection('asettings')">
+            <span class="nav-icon">⚙️</span> Settings
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="btn btn-ghost btn-full btn-sm" onclick="logout()">← Logout</button>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" onclick="toggleSidebar('adminSidebar')">☰</button>
+          <span class="topbar-title" id="adminTopTitle">System Dashboard</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="live-indicator"><div class="live-dot"></div> LIVE</div>
+          <button class="btn btn-primary btn-sm" onclick="runMonitoringCycle()">⚡ Run Analysis</button>
+        </div>
+      </div>
+      <div class="content">
+        <!-- ADMIN DASH -->
+        <div class="content-section active" id="a-adash">
+          <div id="adminAlertTicker"></div>
+          <div class="stats-grid" id="adminStats"></div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h3>📈 School Performance Trend</h3>
+              <canvas id="schoolTrendChart" height="220"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>🏫 Class Averages</h3>
+              <canvas id="classAvgChart" height="220"></canvas>
+            </div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h3>🔮 Risk Overview</h3>
+              <canvas id="riskPieChart" height="220"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>📅 Daily Attendance (This Week)</h3>
+              <canvas id="weekAttChart" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- STUDENTS -->
+        <div class="content-section" id="a-astudents">
+          <div class="section-header"><h2>Student Management</h2></div>
+          <div class="chart-card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">➕ Add New Student</h3>
+            <div class="form-row">
+              <div class="form-group"><label>Full Name</label><input type="text" id="newStudentName" placeholder="Full name"></div>
+              <div class="form-group"><label>Class</label><select id="newStudentClass"><option>S1A</option><option>S1B</option><option>S2A</option><option>S3A</option></select></div>
+              <div class="form-group"><label>Admission Year</label><input type="text" id="newStudentYear" placeholder="2024"></div>
+              <div class="form-group"><label>Parent Contact</label><input type="text" id="newStudentContact" placeholder="+256 700 000000"></div>
+            </div>
+            <button class="btn btn-primary" onclick="addStudent()">➕ Add Student</button>
+          </div>
+          <div class="table-card">
+            <div class="table-header">
+              <h3>All Students</h3>
+              <div class="search-box"><span>🔍</span><input type="text" placeholder="Search..." oninput="adminSearchStudents(this.value)"></div>
+            </div>
+            <table>
+              <thead><tr><th>LIN</th><th>Name</th><th>Class</th><th>Avg</th><th>Signal</th><th>Action</th></tr></thead>
+              <tbody id="adminStudentTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- TEACHERS -->
+        <div class="content-section" id="a-ateachers">
+          <div class="section-header"><h2>Teacher Management</h2></div>
+          <div class="chart-card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">➕ Add Teacher</h3>
+            <div class="form-row">
+              <div class="form-group"><label>Full Name</label><input type="text" id="newTeacherName" placeholder="Full name"></div>
+              <div class="form-group"><label>Subject</label><select id="newTeacherSubject"><option>Mathematics</option><option>English</option><option>Science</option><option>History</option></select></div>
+              <div class="form-group"><label>Email</label><input type="text" id="newTeacherEmail" placeholder="teacher@school.com"></div>
+            </div>
+            <button class="btn btn-primary" onclick="addTeacher()">➕ Add Teacher</button>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><h3>Staff Registry</h3></div>
+            <table>
+              <thead><tr><th>ID</th><th>Name</th><th>Subject</th><th>Class Count</th><th>Status</th></tr></thead>
+              <tbody id="teacherTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- RESULTS MANAGEMENT -->
+        <div class="content-section" id="a-aresults">
+          <div class="section-header"><h2>Results Management</h2></div>
+          <div class="chart-card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">📤 Upload / Publish Results</h3>
+            <div class="form-row">
+              <div class="form-group"><label>Exam Type</label><select id="pubExam"><option>Term 1</option><option>Term 2</option><option>Term 3</option><option>Final</option></select></div>
+              <div class="form-group"><label>Class</label><select id="pubClass"><option>All Classes</option><option>S1A</option><option>S2A</option></select></div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" onclick="publishResults()">📢 Publish Results</button>
+              <button class="btn btn-success" onclick="generateAllReports()">📄 Generate Reports</button>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><h3>Published Exams</h3></div>
+            <table>
+              <thead><tr><th>Exam</th><th>Class</th><th>Published</th><th>Students</th><th>Avg Score</th><th>Status</th></tr></thead>
+              <tbody id="publishedTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- ANALYTICS -->
+        <div class="content-section" id="a-aanalytics">
+          <div class="section-header"><h2>School Analytics</h2></div>
+          <div class="stats-grid" id="analyticsStats"></div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h3>🎯 Subject Performance Map</h3>
+              <canvas id="subjectHeatChart" height="250"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>📉 Trend Predictions</h3>
+              <canvas id="predChart" height="250"></canvas>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><h3>🏆 Top Performers School-Wide</h3></div>
+            <table>
+              <thead><tr><th>Rank</th><th>Name</th><th>Class</th><th>Average</th><th>Trend</th></tr></thead>
+              <tbody id="topPerformersTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- REPORTS -->
+        <div class="content-section" id="a-areports">
+          <div class="section-header"><h2>Report Generation</h2></div>
+          <div class="chart-card" style="margin-bottom:24px">
+            <h3 style="margin-bottom:16px">🖨️ Generate Report Cards</h3>
+            <div class="form-row">
+              <div class="form-group"><label>Student LIN / Class</label><input type="text" id="reportTarget" placeholder="LIN or Class code"></div>
+              <div class="form-group"><label>Report Type</label><select><option>Full Report Card</option><option>Subject Summary</option><option>Attendance Report</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="previewReport()">👁 Preview Report</button>
+          </div>
+          <div id="reportPreview"></div>
+        </div>
+        <!-- MONITORING -->
+        <div class="content-section" id="a-amonitoring">
+          <div class="section-header"><h2>Live Monitoring Engine</h2><p>Academic Intelligence Signal Monitor</p></div>
+          <div class="stats-grid" id="monitorStats"></div>
+          <div class="chart-card" style="margin-bottom:24px">
+            <h3>⚡ Signal Engine Output — Last 10 Cycles</h3>
+            <canvas id="signalChart" height="180"></canvas>
+          </div>
+          <div class="risk-cards" id="monitorAlerts"></div>
+        </div>
+        <!-- SETTINGS -->
+        <div class="content-section" id="a-asettings">
+          <div class="section-header"><h2>System Settings</h2></div>
+          <div class="chart-card" style="margin-bottom:16px">
+            <h3 style="margin-bottom:16px">🏫 School Profile</h3>
+            <div class="form-row">
+              <div class="form-group"><label>School Name</label><input type="text" value="Dorah Bloch School"></div>
+              <div class="form-group"><label>Academic Year</label><input type="text" value="2024–2025"></div>
+              <div class="form-group"><label>Term</label><select><option>Term 1</option><option>Term 2</option><option>Term 3</option></select></div>
+              <div class="form-group"><label>Grading Scale</label><select><option>Uganda (D1–F9)</option><option>Kenya (A–E)</option><option>Percent</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+          </div>
+          <div class="chart-card">
+            <h3 style="margin-bottom:16px">⚡ System Status</h3>
+            <div id="systemStatus"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+//  DORAH BLOCH — DATA ENGINE
+// ══════════════════════════════════════════════════
+
+const SUBJECTS = ['Mathematics','English','Science','History','Geography','Physics','Chemistry'];
+const CLASSES = ['S1A','S1B','S2A','S2B','S3A'];
+const EXAMS = ['T1','T2','T3','Final'];
+
+// ── Seeded random (deterministic per seed)
+function seededRand(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+// ── Generate school database
+function generateDB() {
+  const rand = seededRand(42);
+  const names = [
+    'Nakato Alice','Ssempala Brian','Akello Grace','Mugisha David','Namukasa Eva',
+    'Kato Felix','Auma Hilda','Ssali James','Nalwoga Irene','Mutebi Kevin',
+    'Achen Lydia','Ssebulime Mark','Nanteza Norah','Opira Paul','Nansubuga Ritah',
+    'Tumwine Sam','Atim Tabitha','Wasswa Umar','Nankya Viola','Kizito William',
+    'Akot Xena','Ssekandi Yusuf','Nambooze Zoe','Baluku Aaron','Ayot Beatrice',
+    'Chelimo Calvin','Tibenderana Daphne','Akumu Edgar','Nassolo Faith','Mayanja George'
+  ];
+  const students = names.map((name, i) => {
+    const lin = `LIN-2024-${String(i+1).padStart(4,'0')}`;
+    const cls = CLASSES[i % CLASSES.length];
+    const baseScore = 40 + Math.floor(rand() * 55);
+    const results = {};
+    EXAMS.forEach(exam => {
+      results[exam] = {};
+      SUBJECTS.forEach(subj => {
+        const score = Math.max(10, Math.min(100, baseScore + Math.floor((rand()-0.5)*30)));
+        results[exam][subj] = score;
+      });
+    });
+    const attDays = Array.from({length:30}, () => {
+      const r = rand();
+      return r > 0.85 ? 'absent' : r > 0.75 ? 'late' : 'present';
+    });
+    return { lin, name, class: cls, results, attDays, admYear: 2024 };
+  });
+
+  const teachers = [
+    { id:'T001', name:'Mr. Odhiambo', subject:'Mathematics', classes:['S1A','S2A'] },
+    { id:'T002', name:'Mrs. Nakayiwa', subject:'English', classes:['S1B','S3A'] },
+    { id:'T003', name:'Dr. Ssemakula', subject:'Science', classes:['S2A','S2B'] },
+    { id:'T004', name:'Ms. Achola', subject:'History', classes:['S1A','S1B'] },
+    { id:'T005', name:'Mr. Mugabo', subject:'Geography', classes:['S3A','S2B'] },
+  ];
+
+  const published = [
+    { exam:'Term 1', class:'All', date:'2024-04-15', students:30, avg:72, status:'published' },
+    { exam:'Term 2', class:'All', date:'2024-08-20', students:30, avg:68, status:'published' },
+    { exam:'Term 3', class:'S1A', date:'2024-11-10', students:12, avg:74, status:'published' },
+  ];
+
+  return { students, teachers, published };
+}
+
+const DB = generateDB();
+let currentUser = null;
+let currentRole = null;
+let selectedExam = 'T1';
+let loginTarget = 'student';
+let liveInterval = null;
+const charts = {};
+
+// ── Signal calculation
+function calcSignal(student) {
+  const allScores = Object.values(student.results).flatMap(e => Object.values(e));
+  const avg = allScores.reduce((a,b)=>a+b,0) / allScores.length;
+  const attPct = (student.attDays.filter(d=>d==='present').length / student.attDays.length) * 100;
+  const signal = avg * 0.5 + attPct * 0.2 + 75 * 0.2 + 80 * 0.1;
+  return { avg: +avg.toFixed(1), attPct: +attPct.toFixed(1), signal: +signal.toFixed(1) };
+}
+
+function signalBadge(s) {
+  if (s >= 80) return '<span class="badge badge-strong">Strong</span>';
+  if (s >= 60) return '<span class="badge badge-stable">Stable</span>';
+  if (s >= 40) return '<span class="badge badge-monitor">Monitor</span>';
+  return '<span class="badge badge-intervention">Intervention</span>';
+}
+function signalClass(s) {
+  if (s >= 80) return 'strong';
+  if (s >= 60) return 'stable';
+  if (s >= 40) return 'monitor';
+  return 'intervention';
+}
+
+function getGrade(score) {
+  if (score >= 80) return 'D1';
+  if (score >= 75) return 'D2';
+  if (score >= 70) return 'C3';
+  if (score >= 65) return 'C4';
+  if (score >= 60) return 'C5';
+  if (score >= 55) return 'C6';
+  if (score >= 45) return 'P7';
+  if (score >= 35) return 'P8';
+  return 'F9';
+}
+
+function subjectAvg(student, subject) {
+  const scores = EXAMS.map(e => student.results[e]?.[subject] || 0);
+  return +(scores.reduce((a,b)=>a+b,0) / scores.length).toFixed(1);
+}
+
+// ══════════════════════════════════════════════════
+//  LOGIN / AUTH
+// ══════════════════════════════════════════════════
+function openLogin(role) {
+  loginTarget = role;
+  const modal = document.getElementById('loginModal');
+  const title = document.getElementById('loginTitle');
+  const sub = document.getElementById('loginSub');
+  const stuFields = document.getElementById('studentFields');
+  const stfFields = document.getElementById('staffFields');
+  if (role === 'student') {
+    title.textContent = '🎓 Student Access';
+    sub.textContent = 'Enter your LIN and full name';
+    stuFields.style.display = 'block';
+    stfFields.style.display = 'none';
+  } else {
+    title.textContent = role === 'teacher' ? '📚 Teacher Login' : '⚙️ Admin Login';
+    sub.textContent = 'Enter your credentials';
+    stuFields.style.display = 'none';
+    stfFields.style.display = 'block';
+  }
+  document.getElementById('loginError').style.display = 'none';
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('loginModal').classList.remove('open');
+}
+
+function doLogin() {
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  if (loginTarget === 'student') {
+    const lin = document.getElementById('linInput').value.trim();
+    const name = document.getElementById('nameInput').value.trim().toLowerCase();
+    const student = DB.students.find(s =>
+      (s.lin.toLowerCase() === lin.toLowerCase() || lin === '') &&
+      (name === '' || s.name.toLowerCase().includes(name))
+    ) || (lin === '' && name === '' ? DB.students[0] : null);
+    if (!student && lin === '' && name === '') {
+      currentUser = DB.students[0];
+    } else if (student) {
+      currentUser = student;
+    } else {
+      err.style.display = 'block';
+      return;
+    }
+    currentRole = 'student';
+    closeModal();
+    loadStudentPortal();
+  } else if (loginTarget === 'teacher') {
+    currentUser = DB.teachers[0];
+    currentRole = 'teacher';
+    closeModal();
+    loadTeacherPortal();
+  } else {
+    currentUser = { name: 'Principal Admin', id: 'ADMIN001' };
+    currentRole = 'admin';
+    closeModal();
+    loadAdminPortal();
+  }
+}
+
+function logout() {
+  currentUser = null; currentRole = null;
+  if (liveInterval) clearInterval(liveInterval);
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  showPage('splash');
+  toast('👋 Logged out successfully', 'info');
+}
+
+// ══════════════════════════════════════════════════
+//  PAGE NAVIGATION
+// ══════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toggleSidebar(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ══════════════════════════════════════════════════
+//  STUDENT PORTAL
+// ══════════════════════════════════════════════════
+function loadStudentPortal() {
+  showPage('studentPortal');
+  const s = currentUser;
+  const sig = calcSignal(s);
+
+  // sidebar user
+  document.getElementById('studentSidebarUser').innerHTML = `
+    <div class="user-avatar">${s.name[0]}</div>
+    <div class="user-info">
+      <div class="name">${s.name.split(' ')[0]}</div>
+      <div class="role">${s.lin} · ${s.class}</div>
+    </div>`;
+
+  renderStudentOverview(s, sig);
+  renderResultsGrid(s, 'T1');
+  renderReportCard(s);
+  renderAttendance(s);
+  renderAssignments(s);
+  renderAIInsights(s, sig);
+
+  startLiveUpdates('student');
+}
+
+function renderStudentOverview(s, sig) {
+  // Profile hero
+  const allT1 = SUBJECTS.map(sub => s.results['T1']?.[sub] || 0);
+  const t1Avg = (allT1.reduce((a,b)=>a+b,0)/allT1.length).toFixed(1);
+
+  document.getElementById('studentProfileHero').innerHTML = `
+    <div class="profile-hero">
+      <div class="profile-avatar">${s.name.split(' ').map(n=>n[0]).join('')}</div>
+      <div class="profile-details">
+        <h2>${s.name}</h2>
+        <p>${s.lin} · Class ${s.class} · Admitted ${s.admYear}</p>
+        <div class="profile-meta">
+          <div class="meta-item"><div class="meta-val">${sig.avg}</div><div class="meta-key">Overall Avg</div></div>
+          <div class="meta-item"><div class="meta-val">${sig.attPct}%</div><div class="meta-key">Attendance</div></div>
+          <div class="meta-item"><div class="meta-val">${sig.signal}</div><div class="meta-key">Signal Score</div></div>
+          <div class="meta-item"><div class="meta-val">${getGrade(sig.avg)}</div><div class="meta-key">Grade</div></div>
+        </div>
+      </div>
+      <div style="margin-left:auto">
+        ${signalBadge(sig.signal)}
+      </div>
+    </div>`;
+
+  // Alert
+  let alertHtml = '';
+  if (sig.avg < 55 || sig.attPct < 70) {
+    alertHtml = `
+      <div style="background:rgba(185,28,59,0.08);border:1px solid rgba(185,28,59,0.25);border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:12px;color:#f87171">
+        ⚠️ <strong>Academic Alert:</strong> 
+        ${sig.avg < 55 ? 'Average score below 55%. ' : ''}
+        ${sig.attPct < 70 ? 'Attendance below 70%. ' : ''}
+        Your teacher has been notified.
+      </div>`;
+  }
+  document.getElementById('studentAlertArea').innerHTML = alertHtml;
+
+  // Stats
+  const rank = [...DB.students]
+    .filter(st => st.class === s.class)
+    .sort((a,b) => calcSignal(b).avg - calcSignal(a).avg)
+    .findIndex(st => st.lin === s.lin) + 1;
+
+  document.getElementById('studentStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-value">${sig.avg}</div>
+      <div class="stat-label">Current Average</div>
+      <span class="stat-change up">+3.2</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-value">${sig.attPct}%</div>
+      <div class="stat-label">Attendance Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-value">#${rank}</div>
+      <div class="stat-label">Class Rank</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-value">${sig.signal}</div>
+      <div class="stat-label">Signal Score</div>
+    </div>`;
+
+  // Charts
+  setTimeout(() => {
+    if (charts.studentTrend) charts.studentTrend.destroy();
+    const termAvgs = EXAMS.map(exam => {
+      const scores = SUBJECTS.map(sub => s.results[exam]?.[sub] || 0);
+      return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+    });
+    charts.studentTrend = new Chart(document.getElementById('studentTrendChart'), {
+      type: 'line',
+      data: {
+        labels: ['Term 1','Term 2','Term 3','Final'],
+        datasets: [{
+          label: 'Average Score',
+          data: termAvgs,
+          borderColor: '#c9a84c',
+          backgroundColor: 'rgba(201,168,76,0.1)',
+          tension: 0.4, fill: true,
+          pointBackgroundColor: '#c9a84c',
+          pointRadius: 5
+        }]
+      },
+      options: chartOpts('Score')
+    });
+
+    if (charts.studentRadar) charts.studentRadar.destroy();
+    const subjAvgs = SUBJECTS.map(sub => subjectAvg(s, sub));
+    charts.studentRadar = new Chart(document.getElementById('studentRadarChart'), {
+      type: 'radar',
+      data: {
+        labels: SUBJECTS.map(s => s.substring(0,4)),
+        datasets: [{
+          label: 'Score',
+          data: subjAvgs,
+          borderColor: '#c9a84c',
+          backgroundColor: 'rgba(201,168,76,0.15)',
+          pointBackgroundColor: '#c9a84c'
+        }]
+      },
+      options: { ...chartOpts(), scales: { r: { min: 0, max: 100, ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#c8c6bc', font: { size: 10 } } } } }
+    });
+  }, 100);
+
+  // AI Card
+  const trend = termAvgs => {
+    if (!termAvgs) return 'Improving';
+    const last = termAvgs[termAvgs.length-1], first = termAvgs[0];
+    return last > first ? 'Improving' : last < first ? 'Declining' : 'Stable';
+  };
+  const aiMsg = sig.signal >= 80
+    ? `Outstanding academic performance! Your signal score of ${sig.signal} places you in the top tier. Continue your consistent effort across all subjects.`
+    : sig.signal >= 60
+    ? `You are performing well overall with a signal of ${sig.signal}. Focus on strengthening weaker subjects to move to the Strong tier.`
+    : sig.signal >= 40
+    ? `Your academic signal is ${sig.signal}. Your teacher has flagged areas needing attention. Consider extra study sessions.`
+    : `Immediate academic support recommended. Signal score ${sig.signal} indicates multiple risk factors. Please speak with your teacher.`;
+
+  document.getElementById('aiOverviewCard').innerHTML = `
+    <div class="ai-card">
+      <h4>🧠 Performance Analysis — ${s.name.split(' ')[0]}</h4>
+      <p>${aiMsg}</p>
+      <p style="margin-top:10px;color:var(--muted);font-size:11px">
+        🔮 Predicted next term: <strong style="color:var(--gold)">${sig.avg > 68 ? 'Improving' : sig.avg > 50 ? 'Stable' : 'Needs Support'}</strong>
+        &nbsp;|&nbsp; Strongest: <strong style="color:#34d399">${SUBJECTS[SUBJECTS.map(sub=>subjectAvg(s,sub)).indexOf(Math.max(...SUBJECTS.map(sub=>subjectAvg(s,sub))))]}</strong>
+        &nbsp;|&nbsp; Needs Work: <strong style="color:#f87171">${SUBJECTS[SUBJECTS.map(sub=>subjectAvg(s,sub)).indexOf(Math.min(...SUBJECTS.map(sub=>subjectAvg(s,sub))))]}</strong>
+      </p>
+    </div>`;
+}
+
+function showStudentSection(id) {
+  document.querySelectorAll('#studentPortal .content-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  document.querySelectorAll('#studentPortal .nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const titles = { overview:'Overview', results:'My Results', reportcard:'Report Card', attendance:'Attendance', assignments:'Assignments', insights:'AI Insights' };
+  document.getElementById('studentTopTitle').textContent = titles[id] || id;
+}
+
+function renderResultsGrid(student, exam) {
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = SUBJECTS.map(sub => {
+    const score = student.results[exam]?.[sub] || 0;
+    const grade = getGrade(score);
+    const color = score >= 70 ? '#34d399' : score >= 55 ? '#fbbf24' : '#f87171';
+    return `
+      <div class="result-subject">
+        <div class="subj-name">${sub}</div>
+        <div class="subj-score" style="color:${color}">${score}</div>
+        <div class="subj-grade">${grade} · ${score >= 70 ? 'Pass' : score >= 50 ? 'Borderline' : 'Fail'}</div>
+        <div class="subj-bar"><div class="subj-bar-fill" style="width:${score}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
+function switchExam(el, exam) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  selectedExam = exam;
+  renderResultsGrid(currentUser, exam);
+}
+
+function renderReportCard(student) {
+  const sig = calcSignal(student);
+  const classRank = [...DB.students]
+    .filter(s => s.class === student.class)
+    .sort((a,b) => calcSignal(b).avg - calcSignal(a).avg)
+    .findIndex(s => s.lin === student.lin) + 1;
+
+  const rows = SUBJECTS.map(sub => {
+    const avgScore = subjectAvg(student, sub);
+    return `<tr>
+      <td>${sub}</td>
+      <td>${student.results['T1']?.[sub] || '—'}</td>
+      <td>${student.results['T2']?.[sub] || '—'}</td>
+      <td>${student.results['T3']?.[sub] || '—'}</td>
+      <td>${student.results['Final']?.[sub] || '—'}</td>
+      <td><strong>${avgScore}</strong></td>
+      <td><span class="badge badge-gold">${getGrade(avgScore)}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('reportCardContent').innerHTML = `
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <h3>🏛️ Dorah Bloch School — Official Report Card</h3>
+          <p style="font-size:11px;color:var(--muted);margin-top:4px">Academic Year 2024–2025 · ${student.name} · ${student.lin} · Class ${student.class}</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="printReport()">🖨️ Print</button>
+      </div>
+      <table>
+        <thead><tr><th>Subject</th><th>T1</th><th>T2</th><th>T3</th><th>Final</th><th>Avg</th><th>Grade</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="padding:20px 24px;border-top:1px solid var(--border);display:flex;gap:32px;flex-wrap:wrap">
+        <div><span style="font-size:11px;color:var(--muted)">Overall Average</span><br><strong style="font-size:18px;color:var(--paper)">${sig.avg}</strong></div>
+        <div><span style="font-size:11px;color:var(--muted)">Class Rank</span><br><strong style="font-size:18px;color:var(--paper)">#${classRank}</strong></div>
+        <div><span style="font-size:11px;color:var(--muted)">Attendance</span><br><strong style="font-size:18px;color:var(--paper)">${sig.attPct}%</strong></div>
+        <div><span style="font-size:11px;color:var(--muted)">Signal</span><br>${signalBadge(sig.signal)}</div>
+        <div style="flex:1;min-width:200px"><span style="font-size:11px;color:var(--muted)">Class Teacher's Comment</span><br>
+          <span style="font-size:12px;color:#c8c6bc;font-style:italic">${sig.signal >= 70 ? '"Excellent work! Keep up the outstanding effort."' : sig.signal >= 50 ? '"Good progress. More focus needed in weaker subjects."' : '"Student needs immediate academic support."'}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function printReport() {
+  toast('🖨️ Report sent to printer queue', 'success');
+}
+
+function renderAttendance(student) {
+  const present = student.attDays.filter(d=>d==='present').length;
+  const absent = student.attDays.filter(d=>d==='absent').length;
+  const late = student.attDays.filter(d=>d==='late').length;
+
+  document.getElementById('attStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">${present}</div><div class="stat-label">Present Days</div></div>
+    <div class="stat-card"><div class="stat-icon">❌</div><div class="stat-value">${absent}</div><div class="stat-label">Absent Days</div></div>
+    <div class="stat-card"><div class="stat-icon">⏰</div><div class="stat-value">${late}</div><div class="stat-label">Late Arrivals</div></div>
+    <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${((present/30)*100).toFixed(0)}%</div><div class="stat-label">Attendance Rate</div></div>`;
+
+  const dayLabels = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  document.getElementById('attCalendar').innerHTML = dayLabels.map(d =>
+    `<div style="font-size:9px;color:var(--muted);text-align:center;padding:4px 0">${d}</div>`
+  ).join('') + student.attDays.map((status, i) =>
+    `<div class="att-day att-${status}" title="Day ${i+1}: ${status}">${i+1}</div>`
+  ).join('');
+}
+
+function renderAssignments(student) {
+  const rand = seededRand(student.lin.charCodeAt(4) || 7);
+  const assignments = SUBJECTS.slice(0,5).flatMap((sub, i) => [
+    { subject: sub, title: `${sub} Worksheet ${i+1}`, due: `2024-${String(9+i%3).padStart(2,'0')}-${String(10+i*2).padStart(2,'0')}`, status: rand() > 0.3 ? 'submitted' : 'pending', score: Math.floor(rand()*30)+70 },
+    { subject: sub, title: `${sub} Project`, due: `2024-11-${String(5+i*3).padStart(2,'0')}`, status: rand() > 0.5 ? 'submitted' : 'missing', score: rand() > 0.5 ? Math.floor(rand()*25)+75 : null },
+  ]);
+
+  document.getElementById('assignmentTable').innerHTML = assignments.map(a => `
+    <tr>
+      <td>${a.subject}</td>
+      <td>${a.title}</td>
+      <td>${a.due}</td>
+      <td><span class="badge ${a.status==='submitted'?'badge-strong':a.status==='pending'?'badge-monitor':'badge-intervention'}">${a.status}</span></td>
+      <td>${a.score ? `<strong>${a.score}/100</strong>` : '—'}</td>
+    </tr>`).join('');
+}
+
+function renderAIInsights(student, sig) {
+  const insights = [
+    {
+      icon: '📈',
+      title: 'Performance Trajectory',
+      text: sig.avg > 68
+        ? `Your scores show an upward trend with an average of ${sig.avg}. You are predicted to achieve Distinction in next term's exams.`
+        : `Current average of ${sig.avg} indicates stability. Targeted revision in low-scoring subjects could push you to the next tier.`
+    },
+    {
+      icon: '🎯',
+      title: 'Strongest Subject',
+      text: `${SUBJECTS[SUBJECTS.map(sub=>subjectAvg(student,sub)).indexOf(Math.max(...SUBJECTS.map(sub=>subjectAvg(student,sub))))]} is your best subject with an average of ${Math.max(...SUBJECTS.map(sub=>subjectAvg(student,sub)))}. This strength shows your analytical capacity.`
+    },
+    {
+      icon: '⚠️',
+      title: 'Area for Improvement',
+      text: `${SUBJECTS[SUBJECTS.map(sub=>subjectAvg(student,sub)).indexOf(Math.min(...SUBJECTS.map(sub=>subjectAvg(student,sub))))]} needs more attention (avg: ${Math.min(...SUBJECTS.map(sub=>subjectAvg(student,sub)))}). The AI recommends 30 minutes of focused daily practice.`
+    },
+    {
+      icon: '🔮',
+      title: 'Predicted Final Score',
+      text: `Based on current trajectory, your predicted final exam score is approximately ${Math.min(100, Math.round(sig.avg * 1.05))}. ${sig.avg > 70 ? 'You are on track for distinction.' : 'Consistent effort will improve this projection.'}`
+    }
+  ];
+
+  document.getElementById('aiInsightCards').innerHTML = insights.map(ins => `
+    <div class="ai-card" style="margin-bottom:16px">
+      <h4>${ins.icon} ${ins.title}</h4>
+      <p>${ins.text}</p>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  TEACHER PORTAL
+// ══════════════════════════════════════════════════
+function loadTeacherPortal() {
+  showPage('teacherPortal');
+  const t = currentUser;
+
+  document.getElementById('teacherSidebarUser').innerHTML = `
+    <div class="user-avatar">${t.name.split(' ')[1][0]}</div>
+    <div class="user-info">
+      <div class="name">${t.name}</div>
+      <div class="role">${t.subject}</div>
+    </div>`;
+
+  renderTeacherDash();
+  renderMarkEntry();
+  renderAttendanceSheet();
+  renderClassTable();
+  renderTeacherAlerts();
+  document.getElementById('attDate').valueAsDate = new Date();
+  startLiveUpdates('teacher');
+}
+
+function renderTeacherDash() {
+  const classStudents = DB.students.filter(s => s.class === 'S1A');
+  const sigs = classStudents.map(s => calcSignal(s));
+  const avgScore = (sigs.reduce((a,b)=>a+b.avg,0)/sigs.length).toFixed(1);
+  const atRisk = sigs.filter(s => s.signal < 50).length;
+
+  document.getElementById('teacherStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value">${DB.students.length}</div><div class="stat-label">Total Students</div></div>
+    <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${avgScore}</div><div class="stat-label">Class Average</div></div>
+    <div class="stat-card"><div class="stat-icon">🚨</div><div class="stat-value">${atRisk}</div><div class="stat-label">At Risk</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value">96%</div><div class="stat-label">Today's Attendance</div></div>`;
+
+  setTimeout(() => {
+    if (charts.teacherSubject) charts.teacherSubject.destroy();
+    const subjAvgs = SUBJECTS.map(sub => {
+      const scores = DB.students.map(s => subjectAvg(s, sub));
+      return +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+    });
+    charts.teacherSubject = new Chart(document.getElementById('teacherSubjectChart'), {
+      type: 'bar',
+      data: {
+        labels: SUBJECTS.map(s=>s.substring(0,5)),
+        datasets: [{ label: 'Class Avg', data: subjAvgs, backgroundColor: 'rgba(201,168,76,0.7)', borderColor: 'var(--gold)', borderWidth: 1, borderRadius: 6 }]
+      },
+      options: chartOpts('Score')
+    });
+
+    if (charts.teacherDist) charts.teacherDist.destroy();
+    const allSigs = DB.students.map(s => calcSignal(s).signal);
+    const dist = [
+      allSigs.filter(s=>s>=80).length,
+      allSigs.filter(s=>s>=60&&s<80).length,
+      allSigs.filter(s=>s>=40&&s<60).length,
+      allSigs.filter(s=>s<40).length
+    ];
+    charts.teacherDist = new Chart(document.getElementById('teacherDistChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Strong','Stable','Monitor','Intervention'],
+        datasets: [{ data: dist, backgroundColor: ['rgba(15,123,82,0.7)','rgba(26,110,189,0.7)','rgba(217,119,6,0.7)','rgba(185,28,59,0.7)'], borderWidth: 0 }]
+      },
+      options: { plugins: { legend: { labels: { color: '#c8c6bc', font: { size: 11 } } } }, cutout: '60%' }
+    });
+  }, 100);
+}
+
+function renderMarkEntry() {
+  const students = DB.students.filter(s => s.class === 'S1A');
+  document.getElementById('markEntryTable').innerHTML = students.map(s => {
+    const score = s.results['T1']?.['Mathematics'] || '';
+    return `<tr>
+      <td style="color:var(--muted)">${s.lin}</td>
+      <td>${s.name}</td>
+      <td><input type="number" min="0" max="100" value="${score}" 
+        style="width:80px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--paper);font-family:'DM Mono',monospace;font-size:12px"
+        oninput="updateGradeCell(this)" data-lin="${s.lin}"></td>
+      <td id="grade-${s.lin.replace(/[^a-z0-9]/gi,'')}">
+        <span class="badge badge-gold">${getGrade(score || 0)}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateGradeCell(input) {
+  const lin = input.dataset.lin.replace(/[^a-z0-9]/gi,'');
+  const cell = document.getElementById('grade-'+lin);
+  if (cell) cell.innerHTML = `<span class="badge badge-gold">${getGrade(input.value||0)}</span>`;
+}
+
+function saveMarks() {
+  const inputs = document.querySelectorAll('#markEntryTable input[data-lin]');
+  let saved = 0;
+  inputs.forEach(inp => {
+    const student = DB.students.find(s=>s.lin===inp.dataset.lin);
+    if (student && inp.value) {
+      student.results['T1']['Mathematics'] = +inp.value;
+      saved++;
+    }
+  });
+  toast(`✅ ${saved} marks saved successfully`, 'success');
+}
+
+function renderAttendanceSheet() {
+  const students = DB.students.filter(s => s.class === 'S1A');
+  document.getElementById('attendanceSheet').innerHTML = students.map((s,i) => `
+    <tr>
+      <td style="color:var(--muted)">${s.lin}</td>
+      <td>${s.name}</td>
+      <td>
+        <select style="background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--paper);font-family:'DM Mono',monospace;font-size:11px">
+          <option value="present" ${s.attDays[0]==='present'?'selected':''}>✅ Present</option>
+          <option value="absent" ${s.attDays[0]==='absent'?'selected':''}>❌ Absent</option>
+          <option value="late" ${s.attDays[0]==='late'?'selected':''}>⏰ Late</option>
+        </select>
+      </td>
+    </tr>`).join('');
+}
+
+function saveAttendance() {
+  toast('✅ Attendance submitted for S1A', 'success');
+}
+
+function renderClassTable() {
+  const sorted = [...DB.students].sort((a,b) => calcSignal(b).avg - calcSignal(a).avg);
+  window._allStudents = sorted;
+  renderStudentRows(sorted, 'classTable');
+}
+
+function renderStudentRows(students, tableId) {
+  document.getElementById(tableId).innerHTML = students.map((s, i) => {
+    const sig = calcSignal(s);
+    const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<tr>
+      <td><span class="rank-num ${rankClass}">#${i+1}</span></td>
+      <td style="color:var(--muted)">${s.lin}</td>
+      <td>${s.name}</td>
+      <td><strong>${sig.avg}</strong></td>
+      <td>
+        <div class="signal-bar">
+          <div class="signal-track"><div class="signal-fill ${signalClass(sig.signal)}" style="width:${sig.signal}%"></div></div>
+          <span class="signal-pct">${sig.signal}</span>
+        </div>
+      </td>
+      <td>${signalBadge(sig.signal)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterStudents(query) {
+  if (!window._allStudents) return;
+  const filtered = window._allStudents.filter(s =>
+    s.name.toLowerCase().includes(query.toLowerCase()) || s.lin.toLowerCase().includes(query.toLowerCase())
+  );
+  renderStudentRows(filtered, 'classTable');
+}
+
+function renderTeacherAlerts() {
+  const atRisk = DB.students.filter(s => {
+    const sig = calcSignal(s);
+    return sig.avg < 55 || sig.attPct < 70;
+  }).slice(0, 8);
+
+  document.getElementById('teacherAlerts').innerHTML = atRisk.map(s => {
+    const sig = calcSignal(s);
+    const isUrgent = sig.avg < 45 || sig.attPct < 60;
+    return `
+      <div class="risk-card ${isUrgent ? '' : 'warning'}">
+        <div class="risk-info">
+          <h4>${s.name} <span style="color:var(--muted);font-size:11px">${s.lin} · ${s.class}</span></h4>
+          <p>${sig.avg < 55 ? `Avg: ${sig.avg} (below 55) ` : ''}${sig.attPct < 70 ? `Attendance: ${sig.attPct}%` : ''}</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          ${signalBadge(sig.signal)}
+          <button class="btn btn-sm btn-ghost" onclick="toast('📧 Notification sent to parents of ${s.name.split(' ')[0]}','success')">Notify</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function showTeacherSection(id) {
+  document.querySelectorAll('#teacherPortal .content-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('t-'+id).classList.add('active');
+  document.querySelectorAll('#teacherPortal .nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const titles = { tdash:'Dashboard',tmarks:'Enter Marks',tattendance:'Attendance',tassignments:'Assignments',tclass:'Class Performance',talerts:'Alerts' };
+  document.getElementById('teacherTopTitle').textContent = titles[id] || id;
+}
+
+function createAssignment() {
+  const title = document.getElementById('asgTitle').value;
+  if (!title) { toast('❌ Please enter an assignment title','error'); return; }
+  toast(`📌 "${title}" published to students`, 'success');
+  document.getElementById('asgTitle').value = '';
+}
+
+// ══════════════════════════════════════════════════
+//  ADMIN PORTAL
+// ══════════════════════════════════════════════════
+function loadAdminPortal() {
+  showPage('adminPortal');
+  document.getElementById('adminSidebarUser').innerHTML = `
+    <div class="user-avatar">A</div>
+    <div class="user-info"><div class="name">Principal</div><div class="role">Administrator</div></div>`;
+
+  renderAdminDash();
+  renderAdminStudentTable(DB.students);
+  renderTeacherTable();
+  renderPublishedTable();
+  renderAnalytics();
+  renderMonitoring();
+  renderSystemStatus();
+  startLiveUpdates('admin');
+}
+
+function renderAdminDash() {
+  const allSigs = DB.students.map(s => calcSignal(s));
+  const schoolAvg = (allSigs.reduce((a,b)=>a+b.avg,0)/allSigs.length).toFixed(1);
+  const atRisk = allSigs.filter(s => s.signal < 50).length;
+  const avgAtt = (allSigs.reduce((a,b)=>a+b.attPct,0)/allSigs.length).toFixed(0);
+
+  // Alert ticker
+  const riskStudents = DB.students.filter(s => calcSignal(s).signal < 50);
+  const tickerItems = riskStudents.map(s => `⚠ ${s.name} (${s.class}) — Signal: ${calcSignal(s).signal}`).join(' &nbsp;·&nbsp; ');
+  document.getElementById('adminAlertTicker').innerHTML = `
+    <div class="alert-ticker">
+      <span class="ticker-label">🚨 ALERTS</span>
+      <div class="ticker-scroll"><div class="ticker-inner">
+        ${tickerItems} &nbsp;&nbsp;&nbsp; ${tickerItems}
+      </div></div>
+    </div>`;
+
+  document.getElementById('adminStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value">${DB.students.length}</div><div class="stat-label">Total Students</div><span class="stat-change up">+2</span></div>
+    <div class="stat-card"><div class="stat-icon">👨‍🏫</div><div class="stat-value">${DB.teachers.length}</div><div class="stat-label">Teaching Staff</div></div>
+    <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${schoolAvg}</div><div class="stat-label">School Average</div><span class="stat-change up">+1.4</span></div>
+    <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value">${avgAtt}%</div><div class="stat-label">Avg Attendance</div></div>
+    <div class="stat-card"><div class="stat-icon">🚨</div><div class="stat-value">${atRisk}</div><div class="stat-label">At Risk</div><span class="stat-change down">-3</span></div>
+    <div class="stat-card"><div class="stat-icon">🏫</div><div class="stat-value">${CLASSES.length}</div><div class="stat-label">Active Classes</div></div>`;
+
+  setTimeout(() => {
+    if (charts.schoolTrend) charts.schoolTrend.destroy();
+    charts.schoolTrend = new Chart(document.getElementById('schoolTrendChart'), {
+      type: 'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'],
+        datasets: [
+          { label: 'School Avg', data: [68,70,67,72,69,71,73,70,74,72,75], borderColor:'#c9a84c', backgroundColor:'rgba(201,168,76,0.08)', tension:0.4, fill:true, pointRadius:3 },
+          { label: 'National Avg', data: [65,65,66,65,66,66,67,66,67,67,68], borderColor:'rgba(136,136,160,0.5)', borderDash:[5,5], tension:0.4, pointRadius:0 }
+        ]
+      },
+      options: chartOpts('Score')
+    });
+
+    if (charts.classAvg) charts.classAvg.destroy();
+    const classAvgs = CLASSES.map(cls => {
+      const students = DB.students.filter(s => s.class === cls);
+      if (!students.length) return 0;
+      const sigs = students.map(s => calcSignal(s).avg);
+      return +(sigs.reduce((a,b)=>a+b,0)/sigs.length).toFixed(1);
+    });
+    charts.classAvg = new Chart(document.getElementById('classAvgChart'), {
+      type: 'bar',
+      data: {
+        labels: CLASSES,
+        datasets: [{ label: 'Average', data: classAvgs, backgroundColor: CLASSES.map((_,i)=>`hsla(${40+i*30},70%,55%,0.7)`), borderRadius: 8 }]
+      },
+      options: chartOpts('Score')
+    });
+
+    if (charts.riskPie) charts.riskPie.destroy();
+    const allS = DB.students.map(s => calcSignal(s).signal);
+    charts.riskPie = new Chart(document.getElementById('riskPieChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Strong (80+)','Stable (60-79)','Monitor (40-59)','Intervention (<40)'],
+        datasets: [{ data: [allS.filter(s=>s>=80).length, allS.filter(s=>s>=60&&s<80).length, allS.filter(s=>s>=40&&s<60).length, allS.filter(s=>s<40).length],
+          backgroundColor: ['rgba(15,123,82,0.7)','rgba(26,110,189,0.7)','rgba(217,119,6,0.7)','rgba(185,28,59,0.7)'], borderWidth: 0 }]
+      },
+      options: { plugins: { legend: { labels: { color: '#c8c6bc', font: { size: 10 } } } }, cutout: '55%' }
+    });
+
+    if (charts.weekAtt) charts.weekAtt.destroy();
+    charts.weekAtt = new Chart(document.getElementById('weekAttChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Mon','Tue','Wed','Thu','Fri'],
+        datasets: [
+          { label: 'Present', data: [28,27,29,26,30], backgroundColor: 'rgba(15,123,82,0.7)', borderRadius: 4 },
+          { label: 'Absent', data: [2,3,1,4,0], backgroundColor: 'rgba(185,28,59,0.5)', borderRadius: 4 }
+        ]
+      },
+      options: chartOpts('Count')
+    });
+  }, 100);
+}
+
+function renderAdminStudentTable(students) {
+  window._adminStudents = students;
+  document.getElementById('adminStudentTable').innerHTML = students.map(s => {
+    const sig = calcSignal(s);
+    return `<tr>
+      <td style="color:var(--muted)">${s.lin}</td>
+      <td>${s.name}</td>
+      <td><span class="badge badge-gold">${s.class}</span></td>
+      <td><strong>${sig.avg}</strong></td>
+      <td>${signalBadge(sig.signal)}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="viewStudentAdmin('${s.lin}')">👁 View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function adminSearchStudents(q) {
+  const filtered = DB.students.filter(s =>
+    s.name.toLowerCase().includes(q.toLowerCase()) || s.lin.toLowerCase().includes(q.toLowerCase()) || s.class.toLowerCase().includes(q.toLowerCase())
+  );
+  renderAdminStudentTable(filtered);
+}
+
+function viewStudentAdmin(lin) {
+  const s = DB.students.find(st => st.lin === lin);
+  if (!s) return;
+  const sig = calcSignal(s);
+  toast(`👁 ${s.name} · Avg: ${sig.avg} · Signal: ${sig.signal}`, 'info');
+}
+
+function addStudent() {
+  const name = document.getElementById('newStudentName').value.trim();
+  if (!name) { toast('❌ Please enter student name','error'); return; }
+  const cls = document.getElementById('newStudentClass').value;
+  const year = document.getElementById('newStudentYear').value || '2024';
+  const newLin = `LIN-${year}-${String(DB.students.length+1).padStart(4,'0')}`;
+  const rand = seededRand(DB.students.length * 7);
+  const results = {};
+  EXAMS.forEach(exam => {
+    results[exam] = {};
+    SUBJECTS.forEach(sub => { results[exam][sub] = Math.floor(rand()*50)+50; });
+  });
+  DB.students.push({ lin: newLin, name, class: cls, results, attDays: Array(30).fill('present'), admYear: +year });
+  renderAdminStudentTable(DB.students);
+  document.getElementById('newStudentName').value = '';
+  toast(`✅ ${name} added with LIN ${newLin}`, 'success');
+}
+
+function renderTeacherTable() {
+  document.getElementById('teacherTable').innerHTML = DB.teachers.map(t => `
+    <tr>
+      <td style="color:var(--muted)">${t.id}</td>
+      <td>${t.name}</td>
+      <td>${t.subject}</td>
+      <td>${t.classes.length}</td>
+      <td><span class="badge badge-strong">Active</span></td>
+    </tr>`).join('');
+}
+
+function addTeacher() {
+  const name = document.getElementById('newTeacherName').value.trim();
+  if (!name) { toast('❌ Enter teacher name','error'); return; }
+  const subject = document.getElementById('newTeacherSubject').value;
+  const id = `T${String(DB.teachers.length+1).padStart(3,'0')}`;
+  DB.teachers.push({ id, name, subject, classes: [] });
+  renderTeacherTable();
+  document.getElementById('newTeacherName').value = '';
+  toast(`✅ ${name} added to staff registry`, 'success');
+}
+
+function renderPublishedTable() {
+  document.getElementById('publishedTable').innerHTML = DB.published.map(p => `
+    <tr>
+      <td>${p.exam}</td>
+      <td>${p.class}</td>
+      <td>${p.date}</td>
+      <td>${p.students}</td>
+      <td>${p.avg}</td>
+      <td><span class="badge badge-strong">${p.status}</span></td>
+    </tr>`).join('');
+}
+
+function publishResults() {
+  const exam = document.getElementById('pubExam').value;
+  const cls = document.getElementById('pubClass').value;
+  DB.published.push({ exam, class: cls, date: new Date().toISOString().split('T')[0], students: DB.students.length, avg: 72, status: 'published' });
+  renderPublishedTable();
+  toast(`📢 ${exam} results published for ${cls}`, 'success');
+}
+
+function generateAllReports() {
+  toast('📄 Generating report cards for all students...', 'success');
+  setTimeout(() => toast('✅ All 30 report cards generated and ready for download', 'success'), 1500);
+}
+
+function renderAnalytics() {
+  const allSigs = DB.students.map(s => calcSignal(s));
+  const schoolAvg = (allSigs.reduce((a,b)=>a+b.avg,0)/allSigs.length).toFixed(1);
+  const top = allSigs.filter(s=>s.signal>=80).length;
+  const atRisk = allSigs.filter(s=>s.signal<50).length;
+
+  document.getElementById('analyticsStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-value">${top}</div><div class="stat-label">Top Performers</div></div>
+    <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value">${schoolAvg}</div><div class="stat-label">School Average</div></div>
+    <div class="stat-card"><div class="stat-icon">🚨</div><div class="stat-value">${atRisk}</div><div class="stat-label">Need Intervention</div></div>
+    <div class="stat-card"><div class="stat-icon">🔮</div><div class="stat-value">+3.2%</div><div class="stat-label">Predicted Growth</div></div>`;
+
+  setTimeout(() => {
+    if (charts.subjectHeat) charts.subjectHeat.destroy();
+    const classSubjData = CLASSES.map(cls => {
+      const clsStudents = DB.students.filter(s => s.class === cls);
+      return SUBJECTS.map(sub => {
+        const scores = clsStudents.map(s => subjectAvg(s, sub));
+        return scores.length ? +(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : 0;
+      });
+    });
+    charts.subjectHeat = new Chart(document.getElementById('subjectHeatChart'), {
+      type: 'bar',
+      data: {
+        labels: SUBJECTS.map(s=>s.substring(0,5)),
+        datasets: CLASSES.map((cls,i) => ({
+          label: cls,
+          data: classSubjData[i],
+          backgroundColor: `hsla(${i*60+20},65%,55%,0.7)`,
+          borderRadius: 4
+        }))
+      },
+      options: { ...chartOpts('Score'), scales: { x: { stacked: false, ticks:{color:'#888'}, grid:{color:'rgba(255,255,255,0.03)'} }, y: { ticks:{color:'#888'}, grid:{color:'rgba(255,255,255,0.05)'} } } }
+    });
+
+    if (charts.pred) charts.pred.destroy();
+    charts.pred = new Chart(document.getElementById('predChart'), {
+      type: 'line',
+      data: {
+        labels: ['T1','T2','T3','Predicted'],
+        datasets: [
+          { label: 'Actual', data: [68,70,73,null], borderColor:'#c9a84c', pointRadius:5, tension:0.3 },
+          { label: 'Predicted', data: [null,null,73,76], borderColor:'#34d399', borderDash:[6,4], pointRadius:5, tension:0.3 }
+        ]
+      },
+      options: chartOpts('Score')
+    });
+  }, 100);
+
+  const topStudents = [...DB.students].sort((a,b) => calcSignal(b).avg - calcSignal(a).avg).slice(0,10);
+  document.getElementById('topPerformersTable').innerHTML = topStudents.map((s,i) => {
+    const sig = calcSignal(s);
+    const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<tr>
+      <td><span class="rank-num ${rankClass}">#${i+1}</span></td>
+      <td>${s.name}</td>
+      <td><span class="badge badge-gold">${s.class}</span></td>
+      <td><strong>${sig.avg}</strong></td>
+      <td><span style="color:#34d399;font-size:12px">↑ Improving</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMonitoring() {
+  const allSigs = DB.students.map(s => calcSignal(s));
+  const atRisk = allSigs.filter(s => s.signal < 50).length;
+  const critical = allSigs.filter(s => s.signal < 40).length;
+
+  document.getElementById('monitorStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value">LIVE</div><div class="stat-label">Engine Status</div></div>
+    <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-value">5min</div><div class="stat-label">Cycle Interval</div></div>
+    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value">${atRisk}</div><div class="stat-label">At Risk</div></div>
+    <div class="stat-card"><div class="stat-icon">🚨</div><div class="stat-value">${critical}</div><div class="stat-label">Critical</div></div>`;
+
+  setTimeout(() => {
+    if (charts.signal) charts.signal.destroy();
+    const cycles = Array.from({length:10},(_,i)=>70+Math.sin(i*0.7)*8+Math.random()*4);
+    charts.signal = new Chart(document.getElementById('signalChart'), {
+      type: 'line',
+      data: {
+        labels: Array.from({length:10},(_,i)=>`Cycle ${i+1}`),
+        datasets: [
+          { label: 'School Signal', data: cycles, borderColor:'#c9a84c', backgroundColor:'rgba(201,168,76,0.08)', tension:0.4, fill:true, pointRadius:4 },
+          { label: 'Threshold', data: Array(10).fill(60), borderColor:'rgba(185,28,59,0.5)', borderDash:[5,5], pointRadius:0 }
+        ]
+      },
+      options: chartOpts('Signal')
+    });
+  }, 100);
+
+  const alertStudents = DB.students.filter(s => {
+    const sig = calcSignal(s);
+    return sig.avg < 55 || sig.attPct < 70;
+  }).slice(0, 10);
+
+  document.getElementById('monitorAlerts').innerHTML = alertStudents.map(s => {
+    const sig = calcSignal(s);
+    return `
+      <div class="risk-card ${sig.signal < 40 ? '' : 'warning'}">
+        <div class="risk-info">
+          <h4>${s.name} · ${s.class}</h4>
+          <p>Signal: ${sig.signal} | Avg: ${sig.avg} | Att: ${sig.attPct}%</p>
+        </div>
+        ${signalBadge(sig.signal)}
+      </div>`;
+  }).join('');
+}
+
+function runMonitoringCycle() {
+  toast('⚡ Monitoring cycle running...', 'info');
+  setTimeout(() => {
+    renderMonitoring();
+    toast('✅ Analysis complete. 3 new signals detected.', 'success');
+  }, 1500);
+}
+
+function previewReport() {
+  const target = document.getElementById('reportTarget').value.trim() || 'S1A';
+  const student = DB.students.find(s => s.lin.toLowerCase().includes(target.toLowerCase()) || s.name.toLowerCase().includes(target.toLowerCase()) || s.class.toLowerCase() === target.toLowerCase());
+  if (!student) { toast('❌ Student not found','error'); return; }
+
+  const sig = calcSignal(student);
+  document.getElementById('reportPreview').innerHTML = `
+    <div class="table-card">
+      <div class="table-header"><h3>📄 Report Card Preview — ${student.name}</h3></div>
+      <div style="padding:24px">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px">
+          <div>
+            <p style="font-size:12px;color:var(--muted)">Student</p><h3 style="font-family:'Syne',sans-serif;color:var(--paper)">${student.name}</h3>
+            <p style="font-size:11px;color:var(--muted);margin-top:4px">${student.lin} · Class ${student.class} · Year ${student.admYear}</p>
+          </div>
+          <div style="text-align:right">
+            <p style="font-size:11px;color:var(--muted)">Academic Year 2024–2025</p>
+            <p style="font-size:11px;color:var(--muted)">Dorah Bloch School</p>
+          </div>
+        </div>
+        <table><thead><tr><th>Subject</th><th>T1</th><th>T2</th><th>T3</th><th>Avg</th><th>Grade</th></tr></thead><tbody>
+          ${SUBJECTS.map(sub=>`<tr><td>${sub}</td><td>${student.results['T1']?.[sub]||'—'}</td><td>${student.results['T2']?.[sub]||'—'}</td><td>${student.results['T3']?.[sub]||'—'}</td><td><strong>${subjectAvg(student,sub)}</strong></td><td><span class="badge badge-gold">${getGrade(subjectAvg(student,sub))}</span></td></tr>`).join('')}
+        </tbody></table>
+        <div style="margin-top:20px;display:flex;gap:32px;flex-wrap:wrap">
+          <div><div style="font-size:11px;color:var(--muted)">Overall Avg</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">${sig.avg}</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Signal</div>${signalBadge(sig.signal)}</div>
+          <div><div style="font-size:11px;color:var(--muted)">Attendance</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800">${sig.attPct}%</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderSystemStatus() {
+  document.getElementById('systemStatus').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${['Backend API','PostgreSQL DB','Redis Cache','Auth Service','Monitoring Engine','Analytics Engine','File Storage','Email Service'].map((svc,i) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px">${svc}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:6px;height:6px;border-radius:50%;background:${i<6?'#34d399':'#fbbf24'}"></div>
+            <span style="font-size:11px;color:${i<6?'#34d399':'#fbbf24'}">${i<6?'Online':'Standby'}</span>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function saveSettings() {
+  toast('✅ Settings saved successfully', 'success');
+}
+
+function showAdminSection(id) {
+  document.querySelectorAll('#adminPortal .content-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('a-'+id).classList.add('active');
+  document.querySelectorAll('#adminPortal .nav-item').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const titles = { adash:'System Dashboard',astudents:'Students',ateachers:'Teachers',aresults:'Results',aanalytics:'Analytics',areports:'Reports',amonitoring:'Monitoring',asettings:'Settings' };
+  document.getElementById('adminTopTitle').textContent = titles[id] || id;
+}
+
+// ══════════════════════════════════════════════════
+//  LIVE UPDATES
+// ══════════════════════════════════════════════════
+function startLiveUpdates(role) {
+  if (liveInterval) clearInterval(liveInterval);
+  liveInterval = setInterval(() => {
+    // Simulate real-time metric drift
+    DB.students.forEach(s => {
+      SUBJECTS.forEach(sub => {
+        const v = s.results['T3'][sub];
+        s.results['T3'][sub] = Math.max(20, Math.min(100, v + Math.floor((Math.random()-0.5)*2)));
+      });
+    });
+    if (role === 'admin' && document.getElementById('a-adash').classList.contains('active')) {
+      // Subtle chart refresh
+    }
+  }, 8000);
+
+  // Periodic notifications
+  const tips = [
+    { msg: '📊 3 students improved signal this cycle', type: 'success' },
+    { msg: '⚠️ New attendance alert: 2 absences today', type: 'info' },
+    { msg: '🔮 Prediction model updated', type: 'info' },
+    { msg: '✅ Monitoring cycle complete', type: 'success' },
+  ];
+  let tipIdx = 0;
+  setTimeout(() => {
+    const notifInterval = setInterval(() => {
+      if (!currentUser) { clearInterval(notifInterval); return; }
+      toast(tips[tipIdx % tips.length].msg, tips[tipIdx % tips.length].type);
+      tipIdx++;
+    }, 15000);
+  }, 5000);
+}
+
+// ══════════════════════════════════════════════════
+//  CHART DEFAULTS
+// ══════════════════════════════════════════════════
+function chartOpts(yLabel) {
+  return {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#c8c6bc', font: { size: 10, family: 'DM Mono' }, boxWidth: 12 } } },
+    scales: {
+      x: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.03)' } },
+      y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, title: yLabel ? { display: false } : undefined }
+    }
+  };
+}
+
+// ══════════════════════════════════════════════════
+//  TOAST NOTIFICATIONS
+// ══════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<div class="toast-title">${msg}</div>`;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut 0.3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }, 3500);
+}
+
+// ══════════════════════════════════════════════════
+//  KEYBOARD
+// ══════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('loginModal').classList.contains('open')) doLogin();
+});
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  toast('🏛️ Dorah Bloch Academic Intelligence System loaded', 'success');
+  // Animate portal cards in
+  document.querySelectorAll('.portal-card').forEach((card, i) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      card.style.transition = 'all 0.5s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'none';
+    }, 300 + i * 150);
+  });
+});
+</script>
+</body>
+</html>
